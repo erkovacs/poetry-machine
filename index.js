@@ -1,19 +1,35 @@
 const express = require("express");
-const app = express();
 const TextGenerator = require("./lib/text-generator");
+const bodyParser = require("body-parser");
+const app = express();
 
-const text = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
+app.use(express.static("public"));
+app.use(bodyParser.json());
 
-app.use(express.static('public'));
+app.post("/api/generate", (req, res) => {
+  const config = {};
+  const { text, order, length } = req.body;
+  try {
+    if (text) {
+      config.text = text;
+    }
+    if (order) {
+      config.order = parseInt(order);
+    }
+    if (length) {
+      config.length = parseInt(length);
+    }
 
-const textGenerator = new TextGenerator({
-    text: text, 
-    order: 5
+    const textGenerator = new TextGenerator(config);
+    textGenerator.generateText();
+    const result = textGenerator.getResult();
+    res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.toString() });
+    console.error(err);
+  }
 });
-textGenerator.createTable();
-textGenerator.generateText();
-console.log(textGenerator.getResult());
 
-app.listen(process.env.PORT || 8080, function(){
-    console.log(`Server started on port ${this.address().port}`);
+app.listen(process.env.PORT || 8080, function() {
+  console.log(`Server started on port ${this.address().port}`);
 });
